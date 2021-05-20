@@ -35,11 +35,19 @@ contract('CVolcyToken', accounts => {
             assert(err.message.indexOf('revert') >= 0, 'should be reverted when amount is over balance');
         }
 
-        const receipt = await tokenInstance.transfer(accounts[1], 250000, { from: accounts[0] });
+        const amoutToTransfer = 250000;
+        const receipt = await tokenInstance.transfer(accounts[1], amoutToTransfer, { from: accounts[0] });
+
+        assert.equal(receipt.logs.length, 1, 'should trigger one event');
+        assert.equal(receipt.logs[0].event, 'Transfer', 'should be a `Transfer` event');
+        assert.equal(receipt.logs[0].args._from, accounts[0], 'from the creator account');
+        assert.equal(receipt.logs[0].args._to, accounts[1], 'transfer to the second account');
+        assert.equal(receipt.logs[0].args._value, amoutToTransfer, `transfer ${amoutToTransfer} tokens`);
+
         const receiverBalance = await tokenInstance.balanceOf(accounts[1]);
         const newCreatorBalance = await tokenInstance.balanceOf(accounts[0]);
         
-        assert.equal(receiverBalance, 250000, 'adds the amount to the receiving account');
-        assert.equal(newCreatorBalance.toNumber(), creatorBalance.toNumber() - 250000, 'deducts the amoubt from the sending account');
+        assert.equal(receiverBalance, amoutToTransfer, 'adds the amount to the receiving account');
+        assert.equal(newCreatorBalance.toNumber(), creatorBalance.toNumber() - amoutToTransfer, 'deducts the amoubt from the sending account');
     });
 });
