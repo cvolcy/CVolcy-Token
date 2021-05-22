@@ -1,4 +1,5 @@
 const CVolcyTokenSale = artifacts.require("./CVolcyTokenSale.sol");
+const CVolcyToken = artifacts.require("./CVolcyToken.sol");
 
 contract('CVolcyTokenSaleTest', accounts => {
     var tokenPrice = 10000000000000; // in wei
@@ -18,6 +19,11 @@ contract('CVolcyTokenSaleTest', accounts => {
 
     it('facilitates token buying', async () => {
         const tokenSaleInstance = await CVolcyTokenSale.deployed();
+        const tokenInstance = await CVolcyToken.deployed();
+
+        const totalSupply = await tokenInstance.totalSupply();
+        const availableTokens = totalSupply.toNumber() * 0.75;
+        await tokenInstance.transfer(tokenSaleInstance.address, availableTokens, { from: owner });
 
         const numberTokensToBuy = 10;
         const buyTokensValue = numberTokensToBuy * tokenPrice;
@@ -32,10 +38,22 @@ contract('CVolcyTokenSaleTest', accounts => {
 
         assert.equal(tokensSold.toNumber(), numberTokensToBuy, 'increments the number of tokens sold');
 
+        let buyerBalance = await tokenInstance.balanceOf(buyer);
+        assert.equal(buyerBalance.toNumber(), numberTokensToBuy)
+
+        let tokenSaleBalance = await tokenInstance.balanceOf(tokenSaleInstance.address);
+        assert.equal(tokenSaleBalance.toNumber(), availableTokens - numberTokensToBuy)
+
         try {
-            assert.fail(await tokenSaleInstance.buyTokens(numberTokensToBuy, { from: buyer, value: 1 })); // using the `.call` here doesn't create a transaction
+            assert.fail(await tokenSaleInstance.buyTokens(numberTokensToBuy, { from: buyer, value: 1 }));
         } catch (err) {
             assert(err.message.indexOf('revert') >= 0, 'should be reverted when numberTokensToBuy doesn\'t match the value in wei');
+        }
+
+        try {
+            assert.fail(await tokenSaleInstance.buyTokens(availableTokens + 1, { from: buyer, value: 1 }));
+        } catch (err) {
+            assert(err.message.indexOf('revert') >= 0, 'should be reverted when numberTokensToBuy is over the number of available tokens');
         }
     });
 });
