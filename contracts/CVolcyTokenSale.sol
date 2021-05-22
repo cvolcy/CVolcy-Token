@@ -4,7 +4,7 @@ pragma solidity 0.8.4;
 import './CVolcyToken.sol';
 
 contract CVolcyTokenSale {
-    address admin;
+    address payable private owner;
     CVolcyToken public tokenContract;
     uint256 public tokenPrice;
     uint256 public tokensSold;
@@ -12,7 +12,7 @@ contract CVolcyTokenSale {
     event Sell(address _buyer, uint256 _amount);
 
     constructor(CVolcyToken _tokenContract, uint256 _tokenPrice) {
-        admin = msg.sender;
+        owner = payable(msg.sender);
         tokenContract = _tokenContract;
         tokenPrice = _tokenPrice;
     }

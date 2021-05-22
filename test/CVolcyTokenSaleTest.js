@@ -2,6 +2,7 @@ const CVolcyTokenSale = artifacts.require("./CVolcyTokenSale.sol");
 
 contract('CVolcyTokenSaleTest', accounts => {
     var tokenPrice = 10000000000000; // in wei
+    var owner = accounts[0];
     var buyer = accounts[1];
 
     it('initialize the contract with the right values', async () => {
