@@ -56,4 +56,25 @@ contract('CVolcyTokenSaleTest', accounts => {
             assert(err.message.indexOf('revert') >= 0, 'should be reverted when numberTokensToBuy is over the number of available tokens');
         }
     });
+
+    it('ends token sale', async () => {
+        const tokenSaleInstance = await CVolcyTokenSale.deployed();
+        const tokenInstance = await CVolcyToken.deployed();
+
+        try {
+            assert.fail(await tokenSaleInstance.endSale({ from: buyer }));
+        } catch (err) {
+            assert(err.message.indexOf('revert') >= 0, 'should be reverted when the sender is not the owner');
+        }
+
+        const tokenSaleBalance = await tokenInstance.balanceOf(tokenSaleInstance.address);
+        const ownerBalance = await tokenInstance.balanceOf(owner);
+        const receipt = await tokenSaleInstance.endSale({ from: owner });
+        const finalOwnerBalance = await tokenInstance.balanceOf(owner);
+
+        assert.equal(finalOwnerBalance.toNumber(), ownerBalance.toNumber() + tokenSaleBalance.toNumber(), 'returns all unsold tokens to admin');
+
+        const finalTokenSaleBalance = await tokenInstance.balanceOf(tokenSaleInstance.address);
+        assert.equal(finalTokenSaleBalance.toNumber(), 0, 'token sale balance was reset to zero');
+    });
 });
