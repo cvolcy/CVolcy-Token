@@ -1,5 +1,40 @@
-const CVolcyTokenSaleTest = artifacts.require("./CVolcyTokenSaleTest.sol");
+const CVolcyTokenSale = artifacts.require("./CVolcyTokenSale.sol");
 
 contract('CVolcyTokenSaleTest', accounts => {
+    var tokenPrice = 10000000000000; // in wei
+    var buyer = accounts[1];
 
+    it('initialize the contract with the right values', async () => {
+        const tokenSaleInstance = await CVolcyTokenSale.deployed();
+    
+        assert.notEqual(tokenSaleInstance.address, 0x0, 'has a contract address');
+        assert.notEqual(await tokenSaleInstance.tokenContract(), 0x0, 'has a token contract address');
+
+        const fetchedTokenPrice = await tokenSaleInstance.tokenPrice();
+
+        assert.equal(fetchedTokenPrice.toNumber(), tokenPrice, `has a token price of ${tokenPrice}`);
+    });
+
+    it('facilitates token buying', async () => {
+        const tokenSaleInstance = await CVolcyTokenSale.deployed();
+
+        const numberTokensToBuy = 10;
+        const buyTokensValue = numberTokensToBuy * tokenPrice;
+        const receipt = await tokenSaleInstance.buyTokens(numberTokensToBuy, { from: buyer, value: buyTokensValue });
+
+        assert.equal(receipt.logs.length, 1, 'should trigger one event');
+        assert.equal(receipt.logs[0].event, 'Sell', 'should be a `Sell` event');
+        assert.equal(receipt.logs[0].args._buyer, buyer, 'from the buying account');
+        assert.equal(receipt.logs[0].args._amount, numberTokensToBuy, `logs the amount of token purchased, ${numberTokensToBuy} tokens`);
+
+        let tokensSold = await tokenSaleInstance.tokensSold();
+
+        assert.equal(tokensSold.toNumber(), numberTokensToBuy, 'increments the number of tokens sold');
+
+        try {
+            assert.fail(await tokenSaleInstance.buyTokens(numberTokensToBuy, { from: buyer, value: 1 })); // using the `.call` here doesn't create a transaction
+        } catch (err) {
+            assert(err.message.indexOf('revert') >= 0, 'should be reverted when numberTokensToBuy doesn\'t match the value in wei');
+        }
+    });
 });
