@@ -26,6 +26,11 @@ contract CVolcyTokenSale {
         emit Sell(msg.sender, _numberOfTokens);
     }
 
+    function endSale() public {
+        require(msg.sender == owner);
+        require(tokenContract.transfer(owner, tokenContract.balanceOf(address(this))));
+    }
+
     function multiply(uint x, uint y) internal pure returns (uint z) {
         require(y == 0 || (z = x * y) / y == x);
     }
